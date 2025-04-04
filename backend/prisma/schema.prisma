@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int             @id @default(autoincrement())
+  email          String          @unique
+  name           String
+  password       String
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  expenses       Expense[]
+  categories     Category[]
+  budgets        Budget[]
+  recurringItems RecurringItem[]
+
+  @@map("users")
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  amount      Float
+  description String?
+  date        DateTime @default(now())
+  userId      Int      @map("user_id")
+  categoryId  Int?     @map("category_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relações
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category?        @relation(fields: [categoryId], references: [id])
+  tags     TagsOnExpenses[]
+
+  @@map("expenses")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String
+  color     String?
+  icon      String?
+  userId    Int      @map("user_id")
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relações
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+  budgets  Budget[]
+
+  @@unique([name, userId])
+  @@map("categories")
+}
+
+model Tag {
+  id        Int              @id @default(autoincrement())
+  name      String
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  expenses  TagsOnExpenses[]
+
+  @@map("tags")
+}
+
+model TagsOnExpenses {
+  expenseId Int      @map("expense_id")
+  tagId     Int      @map("tag_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([expenseId, tagId])
+  @@map("tags_on_expenses")
+}
+
+model Budget {
+  id         Int       @id @default(autoincrement())
+  amount     Float
+  startDate  DateTime  @map("start_date")
+  endDate    DateTime  @map("end_date")
+  userId     Int       @map("user_id")
+  categoryId Int?      @map("category_id")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  @@map("budgets")
+}
+
+model RecurringItem {
+  id          Int       @id @default(autoincrement())
+  amount      Float
+  description String
+  frequency   String
+  startDate   DateTime  @map("start_date")
+  endDate     DateTime? @map("end_date")
+  userId      Int       @map("user_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("recurring_items")
+}
+
+model Report {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type      String
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  filters   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("reports")
+}
