@@ -23,13 +23,13 @@ export function userRoutes(app: FastifyInstance) {
       })
 
       if (!user) {
-        return reply.status(401).send({ message: 'Invalid credentials.' })
+        return reply.status(400).send({ message: 'Invalid credentials.' })
       }
 
       const passwordMatch = await bcrypt.compare(password, user.password)
 
       if (!passwordMatch) {
-        return reply.status(401).send({ message: 'Invalid credentials.' })
+        return reply.status(400).send({ message: 'Invalid credentials.' })
       }
 
       const token = app.jwt.sign({ sub: user.id }, { expiresIn: '1d' })
