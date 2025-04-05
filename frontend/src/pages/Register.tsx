@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Loader2, UserPlus, Mail, Lock, User } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -226,6 +227,8 @@ export default function Register() {
                   </FormItem>
                 )}
               />
+
+              {form.formState.errors.confirmPassword && toast.error('As senhas não coincidem.')}
 
               <Button
                 type="submit"

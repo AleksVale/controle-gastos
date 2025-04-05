@@ -12,4 +12,6 @@ export function expenseRoutes(app: FastifyInstance) {
   app.get('/expenses/:id', expenseController.get)
   app.put('/expenses/:id', expenseController.update)
   app.delete('/expenses/:id', expenseController.delete)
+  app.get('/expenses/summary', expenseController.summary)
+  app.get('/expenses/total', expenseController.getTotalExpenses)
 }

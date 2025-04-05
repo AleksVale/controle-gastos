@@ -10,6 +10,7 @@ export const app = fastify({ logger: true })
 
 app.register(cors, {
   origin: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
 })
 
 app.register(jwt, {

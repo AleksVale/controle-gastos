@@ -9,7 +9,7 @@ export const api = axios.create({
   },
 })
 
-// Interceptor to add auth token to requests
+// Interceptor para adicionar o token de autenticação
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token')
 
@@ -20,13 +20,12 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Interceptor to handle errors and authentication issues
+// Interceptor para tratar erros de resposta
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    // Handle 401 Unauthorized errors
+    // Lida com erros 401 (não autorizado)
     if (error.response?.status === 401) {
-      // Clear localStorage and redirect to login
       localStorage.removeItem('auth_token')
       window.location.href = '/auth/login'
     }

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { categoryService } from '@/services/category-service'
+import { CategoryService } from '@/services/category-service'
 
 interface CreateCategoryPayload {
   name: string
@@ -11,23 +11,23 @@ interface CreateCategoryPayload {
 export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
-    queryFn: () => categoryService.list(),
+    queryFn: () => CategoryService.list(),
   })
 }
 
 export function useCategoryById(id: number | undefined) {
   return useQuery({
     queryKey: ['category', id],
-    queryFn: () => (id ? categoryService.getById(id) : Promise.reject('No ID provided')),
+    queryFn: () => (id ? CategoryService.getById(id) : Promise.reject('No ID provided')),
     enabled: !!id,
   })
 }
 
 export function useCreateCategory() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
-    mutationFn: (data: CreateCategoryPayload) => categoryService.create(data),
+    mutationFn: (data: CreateCategoryPayload) => CategoryService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
     },
@@ -36,9 +36,9 @@ export function useCreateCategory() {
 
 export function useUpdateCategory(id: number) {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
-    mutationFn: (data: Partial<CreateCategoryPayload>) => categoryService.update(id, data),
+    mutationFn: (data: Partial<CreateCategoryPayload>) => CategoryService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
       queryClient.invalidateQueries({ queryKey: ['category', id] })
@@ -48,9 +48,9 @@ export function useUpdateCategory(id: number) {
 
 export function useDeleteCategory() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
-    mutationFn: (id: number) => categoryService.delete(id),
+    mutationFn: (id: number) => CategoryService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
     },

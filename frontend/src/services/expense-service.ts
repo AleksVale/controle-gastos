@@ -1,5 +1,5 @@
+import { api } from '@/lib/axios'
 import { Expense, PaginatedResponse } from '@/types/api'
-import { apiRequest } from '@/lib/axios'
 
 interface ExpenseFilters {
   page?: number
@@ -7,6 +7,9 @@ interface ExpenseFilters {
   startDate?: string
   endDate?: string
   categoryId?: number
+  minAmount?: number
+  maxAmount?: number
+  description?: string
 }
 
 interface CreateExpensePayload {
@@ -17,42 +20,56 @@ interface CreateExpensePayload {
   tagIds?: number[]
 }
 
-export const expenseService = {
+type UpdateExpensePayload = Partial<CreateExpensePayload>
+
+export const ExpenseService = {
+  // Lista todas as despesas com filtros opcionais
   list: async (filters: ExpenseFilters = {}): Promise<PaginatedResponse<Expense>> => {
-    return apiRequest<PaginatedResponse<Expense>>({
-      method: 'GET',
-      url: '/expenses',
-      params: filters,
-    })
+    const response = await api.get<PaginatedResponse<Expense>>('/expenses', { params: filters })
+    return response.data
   },
-  
+
+  // Busca uma despesa pelo ID
   getById: async (id: number): Promise<Expense> => {
-    return apiRequest<Expense>({
-      method: 'GET',
-      url: `/expenses/${id}`,
-    })
+    const response = await api.get<Expense>(`/expenses/${id}`)
+    return response.data
   },
-  
+
+  // Cria uma nova despesa
   create: async (data: CreateExpensePayload): Promise<Expense> => {
-    return apiRequest<Expense>({
-      method: 'POST',
-      url: '/expenses',
-      data,
-    })
+    const response = await api.post<Expense>('/expenses', data)
+    return response.data
   },
-  
-  update: async (id: number, data: Partial<CreateExpensePayload>): Promise<Expense> => {
-    return apiRequest<Expense>({
-      method: 'PUT',
-      url: `/expenses/${id}`,
-      data,
-    })
+
+  // Atualiza uma despesa existente
+  update: async (id: number, data: UpdateExpensePayload): Promise<Expense> => {
+    const response = await api.put<Expense>(`/expenses/${id}`, data)
+    return response.data
   },
-  
+
+  // Deleta uma despesa pelo ID
   delete: async (id: number): Promise<void> => {
-    return apiRequest<void>({
-      method: 'DELETE',
-      url: `/expenses/${id}`,
+    await api.delete(`/expenses/${id}`)
+  },
+
+  // Obtém o total de despesas
+  getTotalExpenses: async (): Promise<number> => {
+    const response = await api.get<{ total: number }>('/expenses/total')
+    return response.data.total
+  },
+
+  // Obtém despesas dentro de um intervalo de datas
+  getExpensesByDateRange: async (
+    startDate: Date,
+    endDate: Date,
+  ): Promise<PaginatedResponse<Expense>> => {
+    const response = await api.get<PaginatedResponse<Expense>>('/expenses', {
+      params: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        perPage: 1000, // Ajuste o limite conforme necessário
+      },
     })
+    return response.data
   },
 }

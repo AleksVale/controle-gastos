@@ -1,15 +1,19 @@
-import js from '@eslint/js';
-import globals from 'globals';
-import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
-import tseslint from 'typescript-eslint';
-import eslintPluginPrettier from 'eslint-plugin-prettier';
-import eslintConfigPrettier from 'eslint-config-prettier';
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+import eslintPluginPrettier from 'eslint-plugin-prettier'
+import eslintConfigPrettier from 'eslint-config-prettier'
 
 export default tseslint.config(
   { ignores: ['dist', 'node_modules'] },
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommended,
+      eslintConfigPrettier, // Adiciona o Prettier como configuração estendida
+    ],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2020,
@@ -29,15 +33,7 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      // Usar o Prettier como uma regra do ESLint
-      'prettier/prettier': ['error', {}, { usePrettierrc: true }],
-      // Regras adicionais de formatação
-      'indent': ['error', 2],
-      'linebreak-style': ['error', 'unix'],
-      'quotes': ['error', 'single', { 'avoidEscape': true }],
-      'semi': ['error', 'never'],
-      'comma-dangle': ['error', 'always-multiline'],
+      'prettier/prettier': ['error'], // Garante que o Prettier seja aplicado como regra
     },
   },
-  eslintConfigPrettier,
 )

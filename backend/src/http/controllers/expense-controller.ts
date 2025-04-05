@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { prisma } from '../../lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 export class ExpenseController {
   async create(request: FastifyRequest, reply: FastifyReply) {
@@ -70,11 +71,22 @@ export class ExpenseController {
       startDate: z.string().datetime().optional(),
       endDate: z.string().datetime().optional(),
       categoryId: z.string().optional(),
+      minAmount: z.string().optional(),
+      maxAmount: z.string().optional(),
+      description: z.string().optional(),
     })
 
     try {
-      const { page, perPage, startDate, endDate, categoryId } =
-        listExpensesSchema.parse(request.query)
+      const {
+        page,
+        perPage,
+        startDate,
+        endDate,
+        categoryId,
+        minAmount,
+        maxAmount,
+        description,
+      } = listExpensesSchema.parse(request.query)
       const userId = request.user.sub
 
       const pageNumber = parseInt(page)
@@ -92,6 +104,22 @@ export class ExpenseController {
             }
           : {}),
         ...(categoryId ? { categoryId: Number(categoryId) } : {}),
+        ...(minAmount || maxAmount
+          ? {
+              amount: {
+                ...(minAmount ? { gte: parseFloat(minAmount) } : {}),
+                ...(maxAmount ? { lte: parseFloat(maxAmount) } : {}),
+              },
+            }
+          : {}),
+        ...(description
+          ? {
+              description: {
+                contains: description,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            }
+          : {}),
       }
 
       const [expenses, total] = await Promise.all([
@@ -184,12 +212,11 @@ export class ExpenseController {
       description: z.string().optional(),
       date: z.string().datetime().optional(),
       categoryId: z.number().optional(),
-      tagIds: z.array(z.number()).optional(),
     })
 
     try {
       const { id } = updateExpenseParamsSchema.parse(request.params)
-      const { amount, description, date, categoryId, tagIds } =
+      const { amount, description, date, categoryId } =
         updateExpenseBodySchema.parse(request.body)
       const userId = request.user.sub
 
@@ -204,43 +231,13 @@ export class ExpenseController {
         return reply.status(404).send({ message: 'Expense not found' })
       }
 
-      // Atualizar tags se necessário
-      if (tagIds) {
-        // Remover associações existentes
-        await prisma.tagsOnExpenses.deleteMany({
-          where: {
-            expenseId: Number(id),
-          },
-        })
-
-        // Adicionar novas associações
-        if (tagIds.length > 0) {
-          await prisma.tagsOnExpenses.createMany({
-            data: tagIds.map((tagId) => ({
-              expenseId: Number(id),
-              tagId,
-            })),
-          })
-        }
-      }
-
       const updatedExpense = await prisma.expense.update({
-        where: {
-          id: Number(id),
-        },
+        where: { id: Number(id) },
         data: {
           amount,
           description,
           date: date ? new Date(date) : undefined,
           categoryId,
-        },
-        include: {
-          category: true,
-          tags: {
-            include: {
-              tag: true,
-            },
-          },
         },
       })
 
@@ -291,6 +288,81 @@ export class ExpenseController {
       }
 
       return reply.status(500).send({ message: 'Internal server error' })
+    }
+  }
+
+  async summary(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const userId = request.user.sub
+
+      // Total de despesas
+      const totalExpenses = await prisma.expense.aggregate({
+        _sum: {
+          amount: true,
+        },
+        where: {
+          userId: Number(userId),
+        },
+      })
+
+      // Número de categorias
+      const categoryCount = await prisma.category.count({
+        where: {
+          userId: Number(userId),
+        },
+      })
+
+      // Última despesa
+      const lastExpense = await prisma.expense.findFirst({
+        where: {
+          userId: Number(userId),
+        },
+        orderBy: {
+          date: 'desc',
+        },
+        select: {
+          amount: true,
+          description: true,
+          date: true,
+        },
+      })
+
+      return reply.status(200).send({
+        totalExpenses: totalExpenses._sum.amount || 0,
+        categoryCount,
+        lastExpense: lastExpense
+          ? {
+              amount: lastExpense.amount,
+              description: lastExpense.description,
+              date: lastExpense.date,
+            }
+          : null,
+      })
+    } catch (error) {
+      console.error('Erro ao gerar resumo:', error)
+      return reply.status(500).send({ message: 'Erro interno do servidor' })
+    }
+  }
+
+  async getTotalExpenses(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const userId = request.user.sub
+
+      const totalExpenses = await prisma.expense.aggregate({
+        _sum: {
+          amount: true,
+        },
+        where: {
+          userId: Number(userId),
+        },
+      })
+
+      return reply.status(200).send({
+        total: totalExpenses._sum.amount || 0,
+      })
+    } catch (error) {
+      console.error('Erro ao calcular o total de despesas:', error)
+      return reply.status(500).send({ message: 'Erro interno do servidor' })
     }
   }
 }

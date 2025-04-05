@@ -7,14 +7,18 @@ import AuthLayout from '@/layouts/AuthLayout'
 
 // Auth protection
 import { ProtectedRoute, PublicRoute } from '@/components/protected-route'
+import Profile from '@/pages/Profile'
 
 // Pages (lazy-loaded)
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
 const Login = lazy(() => import('@/pages/Login'))
 const Register = lazy(() => import('@/pages/Register'))
 const Expenses = lazy(() => import('@/pages/Expenses'))
+const CreateExpense = lazy(() => import('@/pages/CreateExpense'))
+const EditExpense = lazy(() => import('@/pages/EditExpense')) // Import the EditExpense page
 const Categories = lazy(() => import('@/pages/Categories'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
+const Reports = lazy(() => import('@/pages/Reports'))
 
 // Loading component for suspense fallback
 const Loading = () => (
@@ -22,11 +26,12 @@ const Loading = () => (
 )
 
 const router = createBrowserRouter([
+  // Protected Routes (requires authentication)
   {
+    path: '/',
     element: <ProtectedRoute />,
     children: [
       {
-        path: '/',
         element: <RootLayout />,
         children: [
           { index: true, element: <Navigate to="/dashboard" replace /> },
@@ -40,11 +45,32 @@ const router = createBrowserRouter([
           },
           {
             path: 'expenses',
-            element: (
-              <Suspense fallback={<Loading />}>
-                <Expenses />
-              </Suspense>
-            ),
+            children: [
+              {
+                index: true,
+                element: (
+                  <Suspense fallback={<Loading />}>
+                    <Expenses />
+                  </Suspense>
+                ),
+              },
+              {
+                path: 'create',
+                element: (
+                  <Suspense fallback={<Loading />}>
+                    <CreateExpense />
+                  </Suspense>
+                ),
+              },
+              {
+                path: 'edit/:id',
+                element: (
+                  <Suspense fallback={<Loading />}>
+                    <EditExpense />
+                  </Suspense>
+                ),
+              },
+            ],
           },
           {
             path: 'categories',
@@ -54,15 +80,33 @@ const router = createBrowserRouter([
               </Suspense>
             ),
           },
+          {
+            path: 'profile',
+            element: (
+              <Suspense fallback={<Loading />}>
+                <Profile />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'reports',
+            element: (
+              <Suspense fallback={<Loading />}>
+                <Reports />
+              </Suspense>
+            ),
+          },
         ],
       },
     ],
   },
+
+  // Public Routes (no authentication required)
   {
+    path: '/auth',
     element: <PublicRoute />,
     children: [
       {
-        path: '/auth',
         element: <AuthLayout />,
         children: [
           { index: true, element: <Navigate to="/auth/login" replace /> },
@@ -86,6 +130,8 @@ const router = createBrowserRouter([
       },
     ],
   },
+
+  // Fallback for undefined routes
   {
     path: '*',
     element: (

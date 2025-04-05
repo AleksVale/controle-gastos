@@ -183,7 +183,6 @@ export class CategoryController {
     const deleteCategorySchema = z.object({
       id: z.string(),
     })
-
     try {
       const { id } = deleteCategorySchema.parse(request.params)
       const userId = request.user.sub
